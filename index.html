@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NutriDash Pro v2.8 - Diego</title>
+    <title>GEOLORIAS</title>
     <style>
         :root {
             --bg: #0f172a; --card: #1e293b; --accent: #8b5cf6;
@@ -13,6 +13,11 @@
 
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; display: flex; justify-content: center; }
         .app-container { max-width: 1100px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+
+        /* TITULO APP */
+        .app-header { text-align: center; margin-bottom: 10px; }
+        .app-header h1 { color: var(--accent); margin: 0; font-size: 2.5rem; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(139, 92, 246, 0.3); }
+        .app-header p { margin: 5px 0 0; opacity: 0.7; font-size: 0.9rem; }
 
         /* DASHBOARD */
         .summary-header { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
@@ -45,6 +50,11 @@
 <body>
 
 <div class="app-container">
+    <div class="app-header">
+        <h1>GEOLORIAS</h1>
+        <p>Tu Dashboard Nutricional Personalizado</p>
+    </div>
+
     <div class="summary-header">
         <div class="stat-card"><h3>Calorías Netas</h3><p id="sum-cal">0</p></div>
         <div class="stat-card" style="border-color: var(--danger)"><h3>Proteína</h3><p id="sum-p">0g</p></div>
@@ -64,9 +74,8 @@
             <label>Actividad</label>
             <select id="act" onchange="save()">
                 <option value="1.2">Sedentario</option>
-                <option value="1.375">Ligero (1-2 días)</option>
-                <option value="1.55">Moderado (3-5 días)</option>
-                <option value="1.725">Fuerte (6-7 días)</option>
+                <option value="1.55">Moderado</option>
+                <option value="1.725">Intenso</option>
             </select>
         </div>
 
@@ -161,7 +170,7 @@
         { id: "manual", cat: "all", n: "➕ AGREGAR ALIMENTO LIBRE", p: 0, c: 0, g: 0 }
     ];
 
-    let state = JSON.parse(localStorage.getItem('diegoNutri_v2.8')) || {
+    let state = JSON.parse(localStorage.getItem('geolorias_v2.9')) || {
         foods: [], ex: [], water: 0,
         user: { w: 75, h: 175, a: 30, gen: 'm', act: 1.2, goal: 1 }
     };
@@ -184,22 +193,40 @@
             const val = document.getElementById('food-sel').value;
             let item;
             if(val === 'manual') {
-                item = { 
-                    n: document.getElementById('m-name').value || "Libre",
-                    p: +document.getElementById('m-p').value || 0,
-                    c: +document.getElementById('m-c').value || 0,
-                    g: +document.getElementById('m-g').value || 0
-                };
+                const name = document.getElementById('m-name').value || "Libre";
+                const p = +document.getElementById('m-p').value || 0;
+                const c = +document.getElementById('m-c').value || 0;
+                const g = +document.getElementById('m-g').value || 0;
+                item = { n: name, p: p, c: c, g: g };
             } else {
-                item = {...dbAlimentos.find(f => f.n === val)};
+                // Buscar por nombre ya que val contiene f.n si no hay id
+                const found = dbAlimentos.find(f => f.n === val);
+                if(found) {
+                    item = {...found};
+                }
             }
-            item.uid = Date.now();
-            state.foods.push(item);
+            if(item) {
+                item.uid = Date.now();
+                state.foods.push(item);
+                // Limpiar campos manuales
+                if(val === 'manual') {
+                    document.getElementById('m-name').value = '';
+                    document.getElementById('m-p').value = '';
+                    document.getElementById('m-c').value = '';
+                    document.getElementById('m-g').value = '';
+                }
+            }
         } else if(type === 'ex') {
             const val = +document.getElementById('ex-val').value;
-            if(val > 0) state.ex.push({ n: document.getElementById('ex-name').value || "Ex", val, uid: Date.now() });
+            if(val > 0) {
+                state.ex.push({ n: document.getElementById('ex-name').value || "Ex", val, uid: Date.now() });
+                document.getElementById('ex-name').value = '';
+                document.getElementById('ex-val').value = '';
+            }
         } else if(type === 'water') {
-            state.water += (+document.getElementById('w-val').value || 0);
+            const val = (+document.getElementById('w-val').value || 0);
+            state.water += val;
+            document.getElementById('w-val').value = 250;
         }
         save();
     }
@@ -216,7 +243,7 @@
             a: +document.getElementById('a').value, gen: 'm',
             act: +document.getElementById('act').value, goal: +document.getElementById('goal').value
         };
-        localStorage.setItem('diegoNutri_v2.8', JSON.stringify(state));
+        localStorage.setItem('geolorias_v2.9', JSON.stringify(state));
         updateUI();
     }
 
@@ -253,13 +280,13 @@
     }
 
     function exportData() {
-        let txt = `REPORTE NUTRICIONAL\nNeto: ${document.getElementById('sum-cal').innerText} kcal\n`;
-        txt += state.foods.map(f => `- ${f.n}`).join('\n');
+        let txt = `REPORTE NUTRICIONAL - GEOLORIAS\nNeto: ${document.getElementById('sum-cal').innerText} kcal\n`;
+        txt += state.foods.map(f => `- ${f.n} (${Math.round(f.p*4+f.c*4+f.g*9)} kcal)`).join('\n');
         const blob = new Blob([txt], {type: 'text/plain'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `diario.txt`; a.click();
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `diario_geolorias.txt`; a.click();
     }
 
-    function resetAll() { if(confirm("¿Borrar todo?")) { state.foods = []; state.ex = []; state.water = 0; save(); } }
+    function resetAll() { if(confirm("¿Borrar todos los datos del día?")) { state.foods = []; state.ex = []; state.water = 0; save(); } }
 
     renderFoodSelect();
     updateUI();
