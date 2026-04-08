@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriDash Pro v2.8 - Diego</title>
+    <style>
+        :root {
+            --bg: #0f172a; --card: #1e293b; --accent: #8b5cf6;
+            --text: #f1f5f9; --success: #10b981; --warning: #f59e0b;
+            --danger: #ef4444; --info: #3b82f6;
+        }
+
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .app-container { max-width: 1100px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+
+        /* DASHBOARD */
+        .summary-header { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .stat-card { background: var(--card); padding: 20px; border-radius: 16px; text-align: center; border-bottom: 4px solid var(--accent); }
+        .stat-card h3 { margin: 0; font-size: 0.8rem; opacity: 0.7; text-transform: uppercase; }
+        .stat-card p { margin: 10px 0 0; font-size: 1.8rem; font-weight: bold; }
+
+        /* GRID PRINCIPAL */
+        .main-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 20px; }
+        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+        .card { background: var(--card); border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
+        h2 { font-size: 1.2rem; margin-top: 0; display: flex; align-items: center; gap: 10px; color: var(--accent); }
+
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        label { display: block; font-size: 0.7rem; font-weight: bold; margin-bottom: 3px; color: var(--accent); margin-top: 10px; }
+        input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+
+        button { width: 100%; padding: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; background: var(--accent); color: white; margin-top: 10px; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-del { background: none; color: var(--danger); width: auto; padding: 0 5px; font-size: 0.9rem; margin: 0; }
+
+        .bar-container { background: #334155; height: 10px; border-radius: 5px; overflow: hidden; margin: 5px 0 15px; }
+        .bar-fill { height: 100%; width: 0%; transition: 0.5s; }
+
+        .list-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+        .manual-box { border: 1px dashed var(--accent); padding: 15px; border-radius: 12px; margin-top: 10px; background: rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="summary-header">
+        <div class="stat-card"><h3>Calorías Netas</h3><p id="sum-cal">0</p></div>
+        <div class="stat-card" style="border-color: var(--danger)"><h3>Proteína</h3><p id="sum-p">0g</p></div>
+        <div class="stat-card" style="border-color: var(--info)"><h3>Agua</h3><p id="sum-w">0ml</p></div>
+        <div class="stat-card" style="border-color: var(--warning)"><h3>Balance</h3><p id="sum-rem">0</p></div>
+    </div>
+
+    <div class="main-grid">
+        <div class="card">
+            <h2>👤 Perfil</h2>
+            <div class="grid-inputs">
+                <div><label>Peso (kg)</label><input type="number" id="w" value="75" oninput="save()"></div>
+                <div><label>Altura (cm)</label><input type="number" id="h" value="175" oninput="save()"></div>
+                <div><label>Edad</label><input type="number" id="a" value="30" oninput="save()"></div>
+                <div><label>Objetivo</label><select id="goal" onchange="save()"><option value="0.85">Déficit</option><option value="1">Mantenimiento</option><option value="1.15">Superávit</option></select></div>
+            </div>
+            <label>Actividad</label>
+            <select id="act" onchange="save()">
+                <option value="1.2">Sedentario</option>
+                <option value="1.375">Ligero (1-2 días)</option>
+                <option value="1.55">Moderado (3-5 días)</option>
+                <option value="1.725">Fuerte (6-7 días)</option>
+            </select>
+        </div>
+
+        <div class="card">
+            <h2>🍕 Alimentos</h2>
+            <div class="grid-inputs">
+                <div>
+                    <label>Categoría</label>
+                    <select id="cat-sel" onchange="renderFoodSelect()">
+                        <option value="desayuno">Desayunos / Fit</option>
+                        <option value="proteina">Solo Proteínas</option>
+                        <option value="carb">Solo Carbos</option>
+                        <option value="comida">Platos Preparados</option>
+                        <option value="snack">Snacks / Otros</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Alimento</label>
+                    <select id="food-sel" onchange="checkManual()"></select>
+                </div>
+            </div>
+
+            <div id="manual-box" class="manual-box" style="display:none;">
+                <label>Nombre Personalizado</label>
+                <input type="text" id="m-name" placeholder="Ej: Atún con Mayo">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                    <div><label>Prot (g)</label><input type="number" id="m-p" placeholder="0"></div>
+                    <div><label>Carb (g)</label><input type="number" id="m-c" placeholder="0"></div>
+                    <div><label>Grasa (g)</label><input type="number" id="m-g" placeholder="0"></div>
+                </div>
+            </div>
+
+            <button onclick="addEntry('foods')">✚ Agregar al Diario</button>
+            <div id="list-foods" style="margin-top:15px; max-height: 180px; overflow-y: auto;"></div>
+        </div>
+
+        <div class="card">
+            <h2>🔥 Actividad Física</h2>
+            <div class="grid-inputs">
+                <div><label>Ejercicio</label><input type="text" id="ex-name" placeholder="Ej: Gym"></div>
+                <div><label>Gasto (kcal)</label><input type="number" id="ex-val" placeholder="0"></div>
+            </div>
+            <button onclick="addEntry('ex')" style="background: var(--danger)">🔥 Registrar Gasto</button>
+            <div id="list-ex" style="margin-top:15px; max-height: 120px; overflow-y: auto;"></div>
+        </div>
+
+        <div class="card">
+            <h2>💧 Hidratación</h2>
+            <div class="bar-container"><div id="bar-w" class="bar-fill" style="background:var(--info)"></div></div>
+            <div class="grid-inputs">
+                <div><label>ml</label><input type="number" id="w-val" value="250"></div>
+                <div style="display:flex; align-items:flex-end;"><button onclick="addEntry('water')" style="background:var(--info)">+ Agua</button></div>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:20px;">
+                <button onclick="exportData()" style="background: var(--success); margin:0">💾 Exportar</button>
+                <button onclick="resetAll()" style="background: #475569; margin:0">🔄 Reiniciar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const dbAlimentos = [
+        // DESAYUNOS / FIT
+        { cat: "desayuno", n: "🥣 Avena con Chía", p: 8, c: 35, g: 6 },
+        { cat: "desayuno", n: "🍦 Yogurth con Avena", p: 12, c: 30, g: 5 },
+        { cat: "desayuno", n: "🍎 Fruta (Manzana/Plátano)", p: 1, c: 25, g: 0 },
+        { cat: "desayuno", n: "🥛 Leche Protein", p: 15, c: 10, g: 1 },
+        { cat: "desayuno", n: "🥚 Huevos (2 unidades)", p: 12, c: 1, g: 10 },
+        
+        // SOLO PROTEÍNAS
+        { cat: "proteina", n: "🍗 Pollo (Solo - 150g)", p: 35, c: 0, g: 4 },
+        { cat: "proteina", n: "🐟 Atún (Lata)", p: 24, c: 0, g: 1 },
+        { cat: "proteina", n: "🍣 Salmón / Jurel", p: 22, c: 0, g: 12 },
+        { cat: "proteina", n: "🥩 Carne Roja magra", p: 26, c: 0, g: 10 },
+
+        // SOLO CARBOS
+        { cat: "carb", n: "🍚 Arroz Blanco (Solo)", p: 4, c: 45, g: 1 },
+        { cat: "carb", n: "🍝 Fideos (Solo)", p: 6, c: 50, g: 2 },
+        { cat: "carb", n: "🥔 Puré de papas", p: 3, c: 35, g: 5 },
+        
+        // PLATOS PREPARADOS
+        { cat: "comida", n: "🍱 Arroz con Pollo + Ensalada", p: 38, c: 45, g: 8 },
+        { cat: "comida", n: "🍝 Fideos Bolognesa", p: 25, c: 55, g: 12 },
+        { cat: "comida", n: "🍲 Lentejas / Porotos", p: 18, c: 50, g: 5 },
+        { cat: "comida", n: "🥖 Marraqueta Huevo/Queso", p: 18, c: 45, g: 15 },
+        { cat: "comida", n: "🌭 Completo Italiano", p: 12, c: 45, g: 25 },
+
+        // SNACKS
+        { cat: "snack", n: "🍪 Mendocino (Alfajor)", p: 5, c: 45, g: 15 },
+        { cat: "snack", n: "🥜 Frutos Secos (Puñado)", p: 6, c: 8, g: 14 },
+        { id: "manual", cat: "all", n: "➕ AGREGAR ALIMENTO LIBRE", p: 0, c: 0, g: 0 }
+    ];
+
+    let state = JSON.parse(localStorage.getItem('diegoNutri_v2.8')) || {
+        foods: [], ex: [], water: 0,
+        user: { w: 75, h: 175, a: 30, gen: 'm', act: 1.2, goal: 1 }
+    };
+
+    function checkManual() {
+        const isManual = document.getElementById('food-sel').value === 'manual';
+        document.getElementById('manual-box').style.display = isManual ? 'block' : 'none';
+    }
+
+    function renderFoodSelect() {
+        const cat = document.getElementById('cat-sel').value;
+        const sel = document.getElementById('food-sel');
+        const filtered = dbAlimentos.filter(f => f.cat === cat || f.id === 'manual');
+        sel.innerHTML = filtered.map(f => `<option value="${f.id || f.n}">${f.n}</option>`).join('');
+        checkManual();
+    }
+
+    function addEntry(type) {
+        if(type === 'foods') {
+            const val = document.getElementById('food-sel').value;
+            let item;
+            if(val === 'manual') {
+                item = { 
+                    n: document.getElementById('m-name').value || "Libre",
+                    p: +document.getElementById('m-p').value || 0,
+                    c: +document.getElementById('m-c').value || 0,
+                    g: +document.getElementById('m-g').value || 0
+                };
+            } else {
+                item = {...dbAlimentos.find(f => f.n === val)};
+            }
+            item.uid = Date.now();
+            state.foods.push(item);
+        } else if(type === 'ex') {
+            const val = +document.getElementById('ex-val').value;
+            if(val > 0) state.ex.push({ n: document.getElementById('ex-name').value || "Ex", val, uid: Date.now() });
+        } else if(type === 'water') {
+            state.water += (+document.getElementById('w-val').value || 0);
+        }
+        save();
+    }
+
+    function remove(type, uid) {
+        if(type === 'foods') state.foods = state.foods.filter(f => f.uid !== uid);
+        if(type === 'ex') state.ex = state.ex.filter(e => e.uid !== uid);
+        save();
+    }
+
+    function save() {
+        state.user = {
+            w: +document.getElementById('w').value, h: +document.getElementById('h').value,
+            a: +document.getElementById('a').value, gen: 'm',
+            act: +document.getElementById('act').value, goal: +document.getElementById('goal').value
+        };
+        localStorage.setItem('diegoNutri_v2.8', JSON.stringify(state));
+        updateUI();
+    }
+
+    function updateUI() {
+        const u = state.user;
+        let tmb = (10 * u.w) + (6.25 * u.h) - (5 * u.a) + 5;
+        const metaCal = Math.round(tmb * u.act * u.goal);
+        const metaP = Math.round(u.w * 1.8);
+
+        const cons = state.foods.reduce((acc, f) => {
+            acc.p += f.p; acc.k += (f.p*4 + f.c*4 + f.g*9); return acc;
+        }, {p:0, k:0});
+        const burned = state.ex.reduce((acc, e) => acc + e.val, 0);
+        const neto = Math.round(cons.k - burned);
+
+        document.getElementById('sum-cal').innerText = neto + ' / ' + metaCal;
+        document.getElementById('sum-p').innerText = Math.round(cons.p) + ' / ' + metaP + 'g';
+        document.getElementById('sum-w').innerText = state.water + 'ml';
+        document.getElementById('sum-rem').innerText = (metaCal - neto);
+
+        document.getElementById('bar-w').style.width = Math.min((state.water/2000)*100, 100) + '%';
+        
+        document.getElementById('list-foods').innerHTML = state.foods.map(f => `
+            <div class="list-item">
+                <span>${f.n}</span>
+                <span>${Math.round(f.p*4+f.c*4+f.g*9)} kcal <button class="btn-del" onclick="remove('foods', ${f.uid})">✕</button></span>
+            </div>`).reverse().join('');
+
+        document.getElementById('list-ex').innerHTML = state.ex.map(e => `
+            <div class="list-item" style="border-left: 3px solid var(--danger)">
+                <span>${e.n}</span>
+                <span>-${e.val} kcal <button class="btn-del" onclick="remove('ex', ${e.uid})">✕</button></span>
+            </div>`).reverse().join('');
+    }
+
+    function exportData() {
+        let txt = `REPORTE NUTRICIONAL\nNeto: ${document.getElementById('sum-cal').innerText} kcal\n`;
+        txt += state.foods.map(f => `- ${f.n}`).join('\n');
+        const blob = new Blob([txt], {type: 'text/plain'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `diario.txt`; a.click();
+    }
+
+    function resetAll() { if(confirm("¿Borrar todo?")) { state.foods = []; state.ex = []; state.water = 0; save(); } }
+
+    renderFoodSelect();
+    updateUI();
+</script>
+</body>
+</html>
