@@ -66,16 +66,17 @@
         <div class="card">
             <h2>👤 Perfil</h2>
             <div class="grid-inputs">
-                <div><label>Peso (kg)</label><input type="number" id="w" value="75" oninput="save()"></div>
-                <div><label>Altura (cm)</label><input type="number" id="h" value="175" oninput="save()"></div>
-                <div><label>Edad</label><input type="number" id="a" value="30" oninput="save()"></div>
-                <div><label>Objetivo</label><select id="goal" onchange="save()"><option value="0.85">Déficit</option><option value="1">Mantenimiento</option><option value="1.15">Superávit</option></select></div>
+                <div><label>Peso (kg)</label><input type="number" id="w" value="70" oninput="save()"></div>
+                <div><label>Altura (cm)</label><input type="number" id="h" value="173" oninput="save()"></div>
+                <div><label>Edad</label><input type="number" id="a" value="27" oninput="save()"></div>
+                <div><label>Objetivo</label><select id="goal" onchange="save()"><option value="0.85">Disminuir peso</option><option value="1">Mantener</option><option value="1.15">Aumentar peso</option></select></div>
             </div>
             <label>Actividad</label>
             <select id="act" onchange="save()">
                 <option value="1.2">Sedentario</option>
-                <option value="1.55">Moderado</option>
-                <option value="1.725">Intenso</option>
+                <option value="1.375">Ligero (1-2 días)</option>
+                <option value="1.55">Moderado (3-5 días)</option>
+                <option value="1.725">Fuerte (6-7 días)</option>
             </select>
         </div>
 
@@ -86,8 +87,8 @@
                     <label>Categoría</label>
                     <select id="cat-sel" onchange="renderFoodSelect()">
                         <option value="desayuno">Desayunos / Fit</option>
-                        <option value="proteina">Solo Proteínas</option>
-                        <option value="carb">Solo Carbos</option>
+                        <option value="proteina">Proteínas</option>
+                        <option value="carb">Carbos</option>
                         <option value="comida">Platos Preparados</option>
                         <option value="snack">Snacks / Otros</option>
                     </select>
@@ -142,6 +143,7 @@
         // DESAYUNOS / FIT
         { cat: "desayuno", n: "🥣 Avena con Chía", p: 8, c: 35, g: 6 },
         { cat: "desayuno", n: "🍦 Yogurth con Avena", p: 12, c: 30, g: 5 },
+        { cat: "desayuno", n: "🍮 Semola con salsa", p: 3.6, c: 35.2, g: 2.9 },
         { cat: "desayuno", n: "🍎 Fruta (Manzana/Plátano)", p: 1, c: 25, g: 0 },
         { cat: "desayuno", n: "🥛 Leche Protein", p: 15, c: 10, g: 1 },
         { cat: "desayuno", n: "🥚 Huevos (2 unidades)", p: 12, c: 1, g: 10 },
